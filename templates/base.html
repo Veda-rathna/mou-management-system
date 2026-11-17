@@ -1,9 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}MOU Management System{% endblock %} | Institutional Agreement Platform</title>
+
+  <!-- Prevent light flash before JS loads -->
+  <script>
+    (function() {
+      const stored = localStorage.getItem('mou_theme');
+      if (stored) {
+        document.documentElement.setAttribute('data-bs-theme', stored);
+      } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
+      }
+    })();
+  </script>
 
   <!-- Google Fonts & Bootstrap 5.3 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,8 +31,8 @@
 <body>
 
   <!-- Navigation Bar -->
-  <header class="border-bottom bg-white sticky-top shadow-sm no-print">
-    <nav class="navbar navbar-expand-lg navbar-light py-2">
+  <header class="navbar-custom sticky-top shadow-sm no-print">
+    <nav class="navbar navbar-expand-lg py-2">
       <div class="container-fluid px-lg-4">
         <a class="navbar-brand navbar-brand-custom" href="{% url 'mou_dashboard' %}">
           <i class="bi bi-shield-check text-primary fs-4"></i>
@@ -28,13 +40,13 @@
           <span class="brand-badge">Institutional</span>
         </a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContent" aria-controls="navContent" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navContent" aria-controls="navContent" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navContent">
           {% if user.is_authenticated %}
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3 gap-lg-1">
             <li class="nav-item">
               <a class="nav-link {% if request.resolver_match.url_name == 'mou_dashboard' %}active fw-semibold text-primary{% endif %}" href="{% url 'mou_dashboard' %}">
                 <i class="bi bi-grid-1x2 me-1"></i> Dashboard
@@ -42,20 +54,32 @@
             </li>
             <li class="nav-item">
               <a class="nav-link {% if request.resolver_match.url_name == 'mou_create' %}active fw-semibold text-primary{% endif %}" href="{% url 'mou_create' %}">
-                <i class="bi bi-plus-circle me-1"></i> New MOU Record
+                <i class="bi bi-plus-circle me-1"></i> New MOU
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if request.resolver_match.url_name == 'global_activity_log' %}active fw-semibold text-primary{% endif %}" href="{% url 'global_activity_log' %}">
+                <i class="bi bi-clock-history me-1"></i> Activity Log
               </a>
             </li>
           </ul>
 
-          <div class="d-flex align-items-center gap-3">
-            <span class="text-muted small d-none d-md-inline">
+          <div class="d-flex align-items-center gap-2">
+            <!-- Dark / Light Theme Toggle -->
+            <button type="button" id="themeToggleBtn" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" title="Toggle Light / Dark Mode">
+              <i id="themeToggleIcon" class="bi bi-moon-stars-fill"></i>
+            </button>
+
+            <span class="text-muted small d-none d-md-inline ms-1">
               <i class="bi bi-person-circle me-1"></i> {{ user.get_full_name|default:user.username }}
             </span>
+
             {% if user.is_staff %}
-            <a href="{% url 'admin:index' %}" class="btn btn-sm btn-outline-secondary" target="_blank">
-              <i class="bi bi-gear"></i> Admin
+            <a href="{% url 'admin:index' %}" class="btn btn-sm btn-outline-secondary" target="_blank" title="Django Administration">
+              <i class="bi bi-gear"></i>
             </a>
             {% endif %}
+
             <form action="{% url 'logout' %}" method="post" class="d-inline">
               {% csrf_token %}
               <button type="submit" class="btn btn-sm btn-outline-danger">
@@ -64,13 +88,15 @@
             </form>
           </div>
           {% else %}
-          <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-              <a class="btn btn-sm btn-primary px-3" href="{% url 'login' %}">
-                <i class="bi bi-box-arrow-in-right me-1"></i> Staff Sign In
-              </a>
-            </li>
-          </ul>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <!-- Theme Toggle for non-logged in users -->
+            <button type="button" id="themeToggleBtn" class="btn btn-sm btn-outline-secondary" title="Toggle Light / Dark Mode">
+              <i id="themeToggleIcon" class="bi bi-moon-stars-fill"></i>
+            </button>
+            <a class="btn btn-sm btn-primary px-3" href="{% url 'login' %}">
+              <i class="bi bi-box-arrow-in-right me-1"></i> Staff Sign In
+            </a>
+          </div>
           {% endif %}
         </div>
       </div>
@@ -96,13 +122,13 @@
   </main>
 
   <!-- Minimalist Enterprise Footer -->
-  <footer class="border-top py-3 bg-white mt-auto no-print">
+  <footer class="border-top py-3 mt-auto no-print navbar-custom">
     <div class="container-fluid px-lg-4 d-flex flex-wrap justify-content-between align-items-center text-muted small">
       <div>
         <strong>MOU Management System</strong> &bull; Institutional Legal & Collaboration Gateway
       </div>
       <div>
-        <span class="badge bg-light text-dark border">
+        <span class="badge bg-body-secondary text-body border">
           <i class="bi bi-cpu text-primary me-1"></i> AI Intelligence Active
         </span>
       </div>

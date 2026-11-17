@@ -1,16 +1,31 @@
-/* Enterprise Institutional Theme */
+/* Enterprise Institutional Theme with Native Dark & Light Mode */
 :root {
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --bg-main: #f8fafc;
   --bg-surface: #ffffff;
+  --bg-subtle: #f1f5f9;
   --border-color: #e2e8f0;
   --text-main: #0f172a;
   --text-muted: #64748b;
   --primary-color: #2563eb;
   --primary-hover: #1d4ed8;
   --primary-light: #eff6ff;
-  --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.05);
-  --card-hover-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --card-hover-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.03);
+}
+
+[data-bs-theme="dark"] {
+  --bg-main: #090d16;
+  --bg-surface: #111827;
+  --bg-subtle: #1f2937;
+  --border-color: #1f2937;
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  --primary-color: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-light: rgba(59, 130, 246, 0.15);
+  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+  --card-hover-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
 }
 
 body {
@@ -20,13 +35,19 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Navbar */
+.navbar-custom {
+  background-color: var(--bg-surface) !important;
+  border-bottom: 1px solid var(--border-color);
+}
+
 .navbar-brand-custom {
   font-weight: 700;
   letter-spacing: -0.025em;
-  color: #0f172a !important;
+  color: var(--text-main) !important;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -37,8 +58,8 @@ body {
   font-weight: 600;
   padding: 0.2rem 0.5rem;
   border-radius: 9999px;
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: var(--primary-light);
+  color: var(--primary-color);
   text-transform: uppercase;
 }
 
@@ -54,7 +75,33 @@ body {
 .app-card-hover:hover {
   transform: translateY(-2px);
   box-shadow: var(--card-hover-shadow);
-  border-color: #cbd5e1;
+}
+
+/* Creation Mode Toggle Cards */
+.mode-card {
+  border: 2px solid var(--border-color);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  cursor: pointer;
+  background-color: var(--bg-surface);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.mode-card:hover {
+  border-color: var(--primary-color);
+  background-color: var(--primary-light);
+}
+
+.mode-card.active {
+  border-color: var(--primary-color);
+  background-color: var(--primary-light);
+}
+
+.mode-card-radio {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
 }
 
 /* Status Badges */
@@ -75,22 +122,22 @@ body {
   border-radius: 50%;
 }
 
-.status-draft { background-color: #f1f5f9; color: #475569; }
+.status-draft { background-color: rgba(100, 116, 139, 0.15); color: #64748b; }
 .status-draft .status-dot { background-color: #64748b; }
 
-.status-pending_partner { background-color: #fef3c7; color: #92400e; }
+.status-pending_partner { background-color: rgba(245, 158, 11, 0.15); color: #d97706; }
 .status-pending_partner .status-dot { background-color: #f59e0b; }
 
-.status-pending_review { background-color: #e0e7ff; color: #3730a3; }
+.status-pending_review { background-color: rgba(99, 102, 241, 0.15); color: #6366f1; }
 .status-pending_review .status-dot { background-color: #6366f1; }
 
-.status-approved { background-color: #dcfce7; color: #166534; }
+.status-approved { background-color: rgba(34, 197, 94, 0.15); color: #16a34a; }
 .status-approved .status-dot { background-color: #22c55e; }
 
-.status-changes_requested { background-color: #fee2e2; color: #991b1b; }
+.status-changes_requested { background-color: rgba(239, 68, 68, 0.15); color: #dc2626; }
 .status-changes_requested .status-dot { background-color: #ef4444; }
 
-.status-expired { background-color: #f3f4f6; color: #1f2937; }
+.status-expired { background-color: rgba(156, 163, 175, 0.15); color: #9ca3af; }
 .status-expired .status-dot { background-color: #9ca3af; }
 
 /* Risk Badges */
@@ -101,14 +148,14 @@ body {
   border-radius: 0.375rem;
 }
 
-.risk-very-low { background-color: #dcfce7; color: #15803d; }
-.risk-low { background-color: #e0f2fe; color: #0369a1; }
-.risk-medium { background-color: #fef9c3; color: #854d0e; }
-.risk-high { background-color: #fee2e2; color: #b91c1c; }
+.risk-very-low { background-color: rgba(34, 197, 94, 0.15); color: #16a34a; }
+.risk-low { background-color: rgba(14, 165, 233, 0.15); color: #0284c7; }
+.risk-medium { background-color: rgba(234, 179, 8, 0.15); color: #ca8a04; }
+.risk-high { background-color: rgba(239, 68, 68, 0.15); color: #dc2626; }
 
 /* Metric Cards */
 .metric-card {
-  padding: 1.25rem;
+  padding: 1.15rem;
   display: flex;
   flex-direction: column;
 }
@@ -123,16 +170,36 @@ body {
 }
 
 .metric-value {
-  font-size: 1.75rem;
+  font-size: 1.65rem;
   font-weight: 700;
   color: var(--text-main);
   line-height: 1.1;
 }
 
+/* Studio Tabs */
+.nav-pills-custom .nav-link {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.nav-pills-custom .nav-link:hover {
+  color: var(--text-main);
+  background-color: var(--bg-subtle);
+}
+
+.nav-pills-custom .nav-link.active {
+  color: #ffffff;
+  background-color: var(--primary-color);
+}
+
 /* Split Screen Layout for MOU Detail */
 .studio-container {
   display: flex;
-  gap: 1.5rem;
+  gap: 1.25rem;
   align-items: flex-start;
 }
 
@@ -164,15 +231,15 @@ body {
 /* PDF Preview Frame */
 .pdf-viewer-frame {
   width: 100%;
-  height: 75vh;
+  height: 72vh;
   border: 1px solid var(--border-color);
   border-radius: 0.5rem;
-  background: #f1f5f9;
+  background: var(--bg-subtle);
 }
 
 /* Signature Pad Canvas */
 .signature-canvas-wrapper {
-  border: 2px dashed #cbd5e1;
+  border: 2px dashed var(--border-color);
   border-radius: 0.5rem;
   background-color: #ffffff;
   position: relative;
@@ -181,13 +248,17 @@ body {
   transition: border-color 0.2s ease;
 }
 
+[data-bs-theme="dark"] .signature-canvas-wrapper {
+  background-color: #ffffff; /* Signatures remain black ink on white canvas for official contrast */
+}
+
 .signature-canvas-wrapper:hover {
-  border-color: #94a3b8;
+  border-color: var(--primary-color);
 }
 
 .signature-canvas {
   width: 100%;
-  height: 160px;
+  height: 150px;
   display: block;
   border-radius: 0.5rem;
 }
@@ -200,7 +271,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: #ffffff;
+  background: var(--bg-surface);
   border: 1px solid var(--border-color);
 }
 
@@ -210,7 +281,56 @@ body {
 
 .guardrail-pill.alert {
   border-left: 3px solid #ef4444;
-  background: #fff5f5;
+}
+
+/* Modern Vertical Timeline for Activity Logs */
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+  margin: 0;
+  list-style: none;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0.75rem;
+  width: 2px;
+  background-color: var(--border-color);
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -2rem;
+  top: 0.15rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-surface);
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  font-size: 0.7rem;
+}
+
+.timeline-content {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
 }
 
 /* Printable Clean Styling */

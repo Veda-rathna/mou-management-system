@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}System Activity Log{% endblock %}
+
+{% block content %}
+<div class="container py-3" style="max-width: 950px;">
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+      <h1 class="h3 fw-bold mb-1">
+        <i class="bi bi-clock-history text-primary me-2"></i> Institutional Activity Log
+      </h1>
+      <p class="text-muted small mb-0">System-wide audit trail of all agreement actions, partner submissions, and lifecycle events.</p>
+    </div>
+
+    <!-- Filter dropdown -->
+    <div>
+      <form method="get" class="d-flex gap-2">
+        <select name="action" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">All Action Types</option>
+          {% for code, label in ActivityAction.choices %}
+            <option value="{{ code }}" {% if action_filter == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+  </div>
+
+  <!-- Activity Timeline Card -->
+  <div class="app-card p-4">
+    {% if logs %}
+      <ul class="timeline">
+        {% for log in logs %}
+        <li class="timeline-item">
+          <!-- Timeline Marker -->
+          <span class="timeline-marker">
+            {% if log.action == 'approved' or log.action == 'college_signed' %}
+              <i class="bi bi-check-lg text-success"></i>
+            {% elif log.action == 'partner_submitted' %}
+              <i class="bi bi-person-check-fill text-primary"></i>
+            {% elif log.action == 'ai_analysis_run' %}
+              <i class="bi bi-cpu-fill text-info"></i>
+            {% elif log.action == 'changes_requested' or log.action == 'expired' %}
+              <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+            {% else %}
+              <i class="bi bi-circle-fill" style="font-size: 0.4rem;"></i>
+            {% endif %}
+          </span>
+
+          <!-- Timeline Content -->
+          <div class="timeline-content">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-1">
+              <div>
+                <a href="{% url 'mou_detail' log.mou.pk %}" class="fw-bold text-decoration-none text-body">
+                  {{ log.mou.title }}
+                </a>
+                <span class="badge bg-body-secondary text-body-secondary border ms-2" style="font-size: 0.65rem;">
+                  {{ log.get_action_display }}
+                </span>
+              </div>
+              <small class="text-muted">{{ log.timestamp|date:"M d, Y H:i:s" }} UTC</small>
+            </div>
+
+            <p class="small text-muted mb-1">{{ log.description }}</p>
+
+            <div class="d-flex gap-3 text-muted" style="font-size: 0.725rem;">
+              <span><i class="bi bi-person me-1"></i> {{ log.actor_name|default:"System" }}</span>
+              {% if log.ip_address %}
+                <span><i class="bi bi-globe me-1"></i> IP: <code>{{ log.ip_address }}</code></span>
+              {% endif %}
+            </div>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+
+      <!-- Pagination -->
+      {% if logs.has_other_pages %}
+      <div class="d-flex justify-content-center mt-4">
+        <ul class="pagination pagination-sm mb-0">
+          {% if logs.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ logs.previous_page_number }}&action={{ action_filter }}">Previous</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+          {% endif %}
+
+          <li class="page-item active"><span class="page-link">{{ logs.number }} / {{ logs.paginator.num_pages }}</span></li>
+
+          {% if logs.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ logs.next_page_number }}&action={{ action_filter }}">Next</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+          {% endif %}
+        </ul>
+      </div>
+      {% endif %}
+
+    {% else %}
+      <div class="text-center py-5 text-muted">
+        <i class="bi bi-clock-history fs-1 d-block mb-2 text-secondary"></i>
+        No activity records found for the selected filter.
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

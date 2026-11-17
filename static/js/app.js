@@ -1,4 +1,49 @@
-// MOU Management System Frontend Utilities
+// MOU Management System Frontend Utilities & Theme Engine
+
+// 1. Theme Engine (Light / Dark Mode)
+(function () {
+  const getStoredTheme = () => localStorage.getItem('mou_theme');
+  const setStoredTheme = theme => localStorage.setItem('mou_theme', theme);
+
+  const getPreferredTheme = () => {
+    const storedTheme = getStoredTheme();
+    if (storedTheme) {
+      return storedTheme;
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  };
+
+  const setTheme = function (theme) {
+    document.documentElement.setAttribute('data-bs-theme', theme);
+    const themeIcon = document.getElementById('themeToggleIcon');
+    if (themeIcon) {
+      if (theme === 'dark') {
+        themeIcon.classList.remove('bi-moon-stars-fill');
+        themeIcon.classList.add('bi-sun-fill');
+      } else {
+        themeIcon.classList.remove('bi-sun-fill');
+        themeIcon.classList.add('bi-moon-stars-fill');
+      }
+    }
+  };
+
+  // Set initial theme immediately
+  setTheme(getPreferredTheme());
+
+  window.addEventListener('DOMContentLoaded', () => {
+    setTheme(getPreferredTheme());
+
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        setStoredTheme(newTheme);
+        setTheme(newTheme);
+      });
+    }
+  });
+})();
 
 document.addEventListener('DOMContentLoaded', function () {
   // Initialize tooltips if Bootstrap is available
@@ -58,4 +103,30 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
   });
+
+  // Creation Mode Switcher on /mous/create/
+  const modeRadios = document.querySelectorAll('input[name="creation_mode"]');
+  const documentSection = document.getElementById('documentUploadSection');
+  const submitBtnText = document.getElementById('submitBtnText');
+  const partnerInviteAlert = document.getElementById('partnerInviteAlert');
+
+  if (modeRadios.length > 0) {
+    modeRadios.forEach(radio => {
+      radio.addEventListener('change', function () {
+        document.querySelectorAll('.mode-card').forEach(card => card.classList.remove('active'));
+        const parentCard = this.closest('.mode-card');
+        if (parentCard) parentCard.classList.add('active');
+
+        if (this.value === 'invite_partner') {
+          if (documentSection) documentSection.style.display = 'none';
+          if (partnerInviteAlert) partnerInviteAlert.style.display = 'block';
+          if (submitBtnText) submitBtnText.textContent = 'Save & Generate Partner Link';
+        } else {
+          if (documentSection) documentSection.style.display = 'block';
+          if (partnerInviteAlert) partnerInviteAlert.style.display = 'none';
+          if (submitBtnText) submitBtnText.textContent = 'Save & Run AI Intelligence';
+        }
+      });
+    });
+  }
 });

@@ -3,7 +3,7 @@
 {% block title %}Audit Trail | {{ mou.title }}{% endblock %}
 
 {% block content %}
-<div class="container py-3" style="max-width: 1000px;">
+<div class="container py-3" style="max-width: 900px;">
 
   <!-- Breadcrumb -->
   <nav aria-label="breadcrumb" class="mb-3">
@@ -17,48 +17,55 @@
   <div class="app-card p-4">
     <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
       <div>
-        <h4 class="fw-bold text-dark mb-1">
-          <i class="bi bi-clock-history text-primary me-2"></i> Institutional Activity Log & Audit Trail
+        <h4 class="fw-bold text-body mb-1">
+          <i class="bi bi-clock-history text-primary me-2"></i> Agreement Audit Trail
         </h4>
-        <p class="text-muted small mb-0">Immutable compliance record for <strong>{{ mou.title }}</strong></p>
+        <p class="text-muted small mb-0">Immutable chronological timeline for <strong>{{ mou.title }}</strong></p>
       </div>
       <a href="{% url 'mou_detail' mou.pk %}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-arrow-left me-1"></i> Back to Review Studio
       </a>
     </div>
 
-    <div class="table-responsive">
-      <table class="table table-hover align-middle small mb-0">
-        <thead class="table-light text-muted text-uppercase" style="font-size: 0.75rem;">
-          <tr>
-            <th scope="col" class="py-3">Timestamp (UTC)</th>
-            <th scope="col">Action Type</th>
-            <th scope="col">Actor / Entity</th>
-            <th scope="col">Description</th>
-            <th scope="col">Client IP</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for log in logs %}
-          <tr>
-            <td class="text-nowrap">{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
-            <td>
-              <span class="badge bg-light text-dark border">
-                {{ log.get_action_display }}
-              </span>
-            </td>
-            <td class="fw-medium text-dark">{{ log.actor_name|default:"System Engine" }}</td>
-            <td class="text-secondary">{{ log.description }}</td>
-            <td class="text-muted text-nowrap"><code>{{ log.ip_address|default:"—" }}</code></td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="5" class="text-center py-4 text-muted">No activity records found.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+    {% if logs %}
+    <ul class="timeline">
+      {% for log in logs %}
+      <li class="timeline-item">
+        <span class="timeline-marker">
+          {% if log.action == 'approved' or log.action == 'college_signed' %}
+            <i class="bi bi-check-lg text-success"></i>
+          {% elif log.action == 'partner_submitted' %}
+            <i class="bi bi-person-check-fill text-primary"></i>
+          {% elif log.action == 'ai_analysis_run' %}
+            <i class="bi bi-cpu-fill text-info"></i>
+          {% elif log.action == 'changes_requested' %}
+            <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+          {% else %}
+            <i class="bi bi-circle-fill" style="font-size: 0.4rem;"></i>
+          {% endif %}
+        </span>
+
+        <div class="timeline-content">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="badge bg-body-secondary text-body border" style="font-size: 0.7rem;">
+              {{ log.get_action_display }}
+            </span>
+            <small class="text-muted">{{ log.timestamp|date:"M d, Y H:i:s" }} UTC</small>
+          </div>
+          <p class="small text-muted mb-1">{{ log.description }}</p>
+          <div class="text-muted" style="font-size: 0.725rem;">
+            Actor: <strong>{{ log.actor_name|default:"System" }}</strong>
+            {% if log.ip_address %}&bull; IP: <code>{{ log.ip_address }}</code>{% endif %}
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <div class="text-center py-5 text-muted small">
+        No activity records logged for this agreement yet.
+      </div>
+    {% endif %}
   </div>
 
 </div>

@@ -8,7 +8,7 @@
   <!-- Header -->
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
     <div>
-      <h1 class="h3 fw-bold mb-1">MOU Management Portfolio</h1>
+      <h1 class="h3 fw-bold mb-1 text-body">MOU Management Portfolio</h1>
       <p class="text-muted small mb-0">Centralized Institutional Agreement Lifecycle & AI Contract Intelligence</p>
     </div>
     <div class="d-flex gap-2">
@@ -66,7 +66,7 @@
     <form method="get" class="row g-2 align-items-center">
       <div class="col-12 col-md-5">
         <div class="input-group">
-          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+          <span class="input-group-text bg-body border-end-0 text-muted"><i class="bi bi-search"></i></span>
           <input type="text" name="q" value="{{ q }}" class="form-control border-start-0 ps-0" placeholder="Search by MOU title, partner, organization, or dept...">
         </div>
       </div>
@@ -101,7 +101,7 @@
   <div class="app-card overflow-hidden">
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0">
-        <thead class="table-light text-muted small text-uppercase">
+        <thead class="bg-body-tertiary text-muted small text-uppercase">
           <tr>
             <th scope="col" class="ps-4 py-3">Agreement Title & Dept</th>
             <th scope="col">Partner Organization</th>
@@ -116,7 +116,7 @@
           <tr>
             <!-- Title & Department -->
             <td class="ps-4 py-3">
-              <a href="{% url 'mou_detail' mou.pk %}" class="fw-semibold text-decoration-none text-dark d-block">
+              <a href="{% url 'mou_detail' mou.pk %}" class="fw-semibold text-decoration-none text-body d-block">
                 {{ mou.title }}
               </a>
               <span class="text-muted small">
@@ -129,7 +129,7 @@
 
             <!-- Partner Info -->
             <td>
-              <div class="fw-medium text-dark">{{ mou.partner_organization }}</div>
+              <div class="fw-medium text-body">{{ mou.partner_organization }}</div>
               <div class="text-muted small">
                 <i class="bi bi-person me-1"></i> {{ mou.partner_name }}
               </div>
@@ -148,10 +148,10 @@
               {% if mou.ai_analysis %}
                 <span class="risk-indicator risk-{{ mou.ai_analysis.risk_level }}">
                   <i class="bi bi-shield-exclamation me-1"></i>
-                  {{ mou.ai_analysis.overall_risk_score }}/10 ({{ mou.ai_analysis.get_risk_level_display }})
+                  {{ mou.ai_analysis.overall_risk_score }}/10
                 </span>
               {% else %}
-                <span class="badge bg-light text-muted border">Pending Scan</span>
+                <span class="badge bg-body-secondary text-muted border">Pending Scan</span>
               {% endif %}
             </td>
 
@@ -171,7 +171,7 @@
                     Expired on {{ mou.expiry_date|date:"M d, Y" }}
                   </span>
                 {% else %}
-                  <span class="text-dark small">
+                  <span class="text-body small">
                     {{ mou.expiry_date|date:"M d, Y" }}
                   </span>
                 {% endif %}
@@ -209,7 +209,7 @@
 
     <!-- Pagination -->
     {% if mous.has_other_pages %}
-    <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light-subtle">
+    <div class="d-flex justify-content-between align-items-center p-3 border-top bg-body-tertiary">
       <small class="text-muted">
         Showing {{ mous.start_index }} to {{ mous.end_index }} of {{ total_count }} records
       </small>

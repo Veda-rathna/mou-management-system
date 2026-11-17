@@ -88,13 +88,20 @@ def mou_create(request):
     """Create new MOU or initiate partner collaboration."""
     if request.method == 'POST':
         form = MOUForm(request.POST, request.FILES)
+        creation_mode = request.POST.get('creation_mode', 'have_document')
+
         if form.is_valid():
             mou = form.save(commit=False)
             mou.created_by = request.user
-            mou.status = MOUStatus.DRAFT
+
+            if creation_mode == 'invite_partner':
+                mou.status = MOUStatus.PENDING_PARTNER
+            else:
+                mou.status = MOUStatus.DRAFT
+
             mou.save()
 
-            # Process PDF text extraction
+            # Process PDF text extraction if document uploaded
             if mou.document:
                 try:
                     pdf_data = PDFProcessingService.extract_document_data(mou.document.path)
@@ -119,11 +126,29 @@ def mou_create(request):
                 request=request
             )
 
-            # Trigger AI Analysis
+            # If inviting partner, automatically generate initial ShareLink
+            if creation_mode == 'invite_partner':
+                link = ShareLink.objects.create(
+                    mou=mou,
+                    expires_at=timezone.now() + timedelta(days=7),
+                    max_access_count=15,
+                    created_by=request.user,
+                )
+                ActivityService.log(
+                    mou=mou,
+                    action=ActivityAction.LINK_GENERATED,
+                    actor=request.user,
+                    description=f"Automated invitation link created for partner to upload draft.",
+                    request=request
+                )
+                messages.success(request, f"MOU Invitation initialized for {mou.partner_organization}! Partner collaboration link is ready.")
+                return redirect('mou_detail', pk=mou.pk)
+
+            # Trigger AI Analysis if document is present
             if mou.extracted_text or mou.description:
                 MOUAnalysisOrchestrator.analyze_mou(mou, actor=request.user)
 
-            messages.success(request, f"MOU '{mou.title}' successfully initialized!")
+            messages.success(request, f"MOU '{mou.title}' successfully created and scanned by AI Intelligence!")
             return redirect('mou_detail', pk=mou.pk)
     else:
         form = MOUForm()
@@ -465,7 +490,27 @@ def executive_summary_view(request, pk):
 
 @login_required
 def audit_log_view(request, pk):
-    """Full chronological audit trail view."""
+    """Full chronological audit trail view for specific MOU."""
     mou = get_object_or_404(MOU, pk=pk)
     logs = mou.activity_logs.all()
     return render(request, 'mous/audit_log.html', {'mou': mou, 'logs': logs})
+
+
+@login_required
+def global_activity_log(request):
+    """System-wide activity trail displaying recent operational and partner actions."""
+    logs = ActivityLog.objects.select_related('mou', 'actor').all()
+    action_filter = request.GET.get('action', '').strip()
+    if action_filter:
+        logs = logs.filter(action=action_filter)
+
+    paginator = Paginator(logs, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'mous/global_activity_log.html', {
+        'logs': page_obj,
+        'action_filter': action_filter,
+        'ActivityAction': ActivityAction,
+    })
+

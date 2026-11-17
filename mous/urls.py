@@ -14,6 +14,9 @@ urlpatterns = [
     path('mous/<int:pk>/executive-summary/', views.executive_summary_view, name='executive_summary'),
     path('mous/<int:pk>/audit-log/', views.audit_log_view, name='audit_log'),
 
+    # Activity Log Trail
+    path('activity/', views.global_activity_log, name='global_activity_log'),
+
     # Risk Flag Resolution
     path('flags/<int:flag_id>/resolve/', views.resolve_risk_flag, name='resolve_risk_flag'),
 

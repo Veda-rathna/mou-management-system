@@ -3,7 +3,7 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<div class="container py-3" style="max-width: 900px;">
+<div class="container py-3" style="max-width: 860px;">
 
   <!-- Breadcrumb -->
   <nav aria-label="breadcrumb" class="mb-3">
@@ -20,15 +20,59 @@
       </div>
       <div>
         <h2 class="h4 fw-bold mb-1">{{ title }}</h2>
-        <p class="text-muted small mb-0">Record agreement metadata and upload original MOU PDF for instant AI extraction.</p>
+        <p class="text-muted small mb-0">Record agreement details, choose your initiation workflow, and run AI contract intelligence.</p>
       </div>
     </div>
 
     <form method="post" enctype="multipart/form-data" novalidate>
       {% csrf_token %}
 
+      <!-- Workflow Mode Selector Cards -->
+      {% if not mou %}
+      <div class="mb-4">
+        <label class="form-label fw-bold small text-uppercase text-muted" style="letter-spacing: 0.05em;">
+          Select Initiation Workflow
+        </label>
+        <div class="row g-3">
+          <!-- Mode 1: I have the document -->
+          <div class="col-12 col-md-6">
+            <label class="mode-card active d-block h-100">
+              <input type="radio" name="creation_mode" value="have_document" class="form-check-input mode-card-radio" checked>
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-file-earmark-pdf-fill text-primary fs-4"></i>
+                <span class="fw-bold text-body">I Have the MOU Document</span>
+              </div>
+              <p class="small text-muted mb-0">
+                You have a draft PDF (either your college template or a copy provided by the partner). Upload now for instant AI clause extraction and risk analysis.
+              </p>
+            </label>
+          </div>
+
+          <!-- Mode 2: Invite partner to provide -->
+          <div class="col-12 col-md-6">
+            <label class="mode-card d-block h-100">
+              <input type="radio" name="creation_mode" value="invite_partner" class="form-check-input mode-card-radio">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-send-fill text-success fs-4"></i>
+                <span class="fw-bold text-body">Request Partner to Upload</span>
+              </div>
+              <p class="small text-muted mb-0">
+                You are inviting the partner organization to submit their proposed MOU draft directly through a secure collaboration link.
+              </p>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Partner Invite Notice (visible when Mode 2 is selected) -->
+      <div id="partnerInviteAlert" class="alert alert-info py-2 small mb-4 shadow-sm" style="display: none;">
+        <i class="bi bi-info-circle-fill me-1"></i>
+        <strong>Invitation Mode:</strong> Fill in the partner’s contact details below. A secure, time-limited upload link will be generated automatically for them.
+      </div>
+      {% endif %}
+
       <!-- Section 1: Agreement Info -->
-      <h5 class="fw-semibold text-dark mb-3">1. Agreement Information</h5>
+      <h5 class="fw-semibold text-body mb-3">1. Agreement Information</h5>
       <div class="row g-3 mb-4">
         <div class="col-12">
           <label class="form-label fw-medium small">MOU Title <span class="text-danger">*</span></label>
@@ -37,15 +81,16 @@
         </div>
 
         <div class="col-12 col-md-6">
-          <label class="form-label fw-medium small">Department / Faculty</label>
+          <label class="form-label fw-medium small">Host Department / Faculty</label>
           {{ form.department }}
           {% if form.department.errors %}<div class="text-danger small mt-1">{{ form.department.errors.0 }}</div>{% endif %}
         </div>
 
-        <div class="col-12 col-md-6">
-          <label class="form-label fw-medium small">PDF Agreement Document</label>
+        <!-- Document Upload Section -->
+        <div class="col-12 col-md-6" id="documentUploadSection">
+          <label class="form-label fw-medium small">MOU PDF Document</label>
           {{ form.document }}
-          <div class="form-text small">Accepted format: <code>.pdf</code> (Max 10 MB). Leave blank if inviting partner to propose draft.</div>
+          <div class="form-text small">Supported: <code>.pdf</code> (Max 10 MB).</div>
           {% if form.document.errors %}<div class="text-danger small mt-1">{{ form.document.errors.0 }}</div>{% endif %}
         </div>
 
@@ -57,7 +102,7 @@
       </div>
 
       <!-- Section 2: External Partner Contact -->
-      <h5 class="fw-semibold text-dark mb-3">2. External Partner Organization</h5>
+      <h5 class="fw-semibold text-body mb-3">2. External Partner Organization</h5>
       <div class="row g-3 mb-4">
         <div class="col-12 col-md-6">
           <label class="form-label fw-medium small">Partner Organization / Company <span class="text-danger">*</span></label>
@@ -85,7 +130,7 @@
       </div>
 
       <!-- Section 3: Validity Dates -->
-      <h5 class="fw-semibold text-dark mb-3">3. Validity Period</h5>
+      <h5 class="fw-semibold text-body mb-3">3. Validity Period (Optional at Initiation)</h5>
       <div class="row g-3 mb-4">
         <div class="col-12 col-md-6">
           <label class="form-label fw-medium small">Effective / Start Date</label>
@@ -105,8 +150,9 @@
         <a href="{% url 'mou_dashboard' %}" class="btn btn-outline-secondary">
           Cancel
         </a>
-        <button type="submit" class="btn btn-primary px-4 shadow-sm">
-          <i class="bi bi-check2-circle me-1"></i> Save & Run AI Intelligence
+        <button type="submit" class="btn btn-primary px-4 shadow-sm d-flex align-items-center gap-2">
+          <i class="bi bi-check2-circle"></i>
+          <span id="submitBtnText">Save & Run AI Intelligence</span>
         </button>
       </div>
 
