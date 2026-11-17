@@ -11,8 +11,8 @@
       const stored = localStorage.getItem('mou_theme');
       if (stored) {
         document.documentElement.setAttribute('data-bs-theme', stored);
-      } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        document.documentElement.setAttribute('data-bs-theme', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-bs-theme', 'light');
       }
     })();
   </script>
@@ -35,8 +35,10 @@
     <nav class="navbar navbar-expand-lg py-2">
       <div class="container-fluid px-lg-4">
         <a class="navbar-brand navbar-brand-custom" href="{% url 'mou_dashboard' %}">
-          <i class="bi bi-shield-check text-primary fs-4"></i>
-          <span>MOU Manager</span>
+          <div class="brand-icon-box">
+            <i class="bi bi-shield-check fs-5"></i>
+          </div>
+          <span class="fw-bold">MOU Manager</span>
           <span class="brand-badge">Institutional</span>
         </a>
 

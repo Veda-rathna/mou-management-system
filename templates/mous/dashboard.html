@@ -5,58 +5,90 @@
 {% block content %}
 <div class="container-fluid px-lg-4">
 
-  <!-- Header -->
-  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+  <!-- Ambient Hero Header -->
+  <div class="dashboard-hero d-flex flex-wrap justify-content-between align-items-center gap-3">
     <div>
-      <h1 class="h3 fw-bold mb-1 text-body">MOU Management Portfolio</h1>
-      <p class="text-muted small mb-0">Centralized Institutional Agreement Lifecycle & AI Contract Intelligence</p>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <h1 class="h3 fw-bold mb-0 text-body">MOU Management Portfolio</h1>
+        <span class="badge bg-primary text-white px-2 py-1" style="font-size: 0.7rem;">Live System</span>
+      </div>
+      <p class="text-muted small mb-0">Centralized institutional agreement lifecycle, external partner signing & AI contract intelligence</p>
     </div>
     <div class="d-flex gap-2">
-      <a href="{% url 'mou_create' %}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
-        <i class="bi bi-file-earmark-plus"></i>
+      <a href="{% url 'mou_create' %}" class="btn btn-primary d-flex align-items-center gap-2 px-3 py-2 shadow-sm">
+        <i class="bi bi-file-earmark-plus fs-5"></i>
         <span>Initiate New MOU</span>
       </a>
     </div>
   </div>
 
-  <!-- Executive Metrics Row -->
+  <!-- Executive Metrics Row with Squircle Icons -->
   <div class="row g-3 mb-4">
+    <!-- Card 1: Total MOUs -->
     <div class="col-6 col-md-4 col-xl-2">
-      <div class="app-card metric-card">
-        <span class="metric-label">Total MOUs</span>
-        <span class="metric-value">{{ total_count }}</span>
+      <div class="metric-card-modern">
+        <div class="metric-icon-box metric-icon-blue">
+          <i class="bi bi-folder2-open"></i>
+        </div>
+        <div class="metric-value-modern">{{ total_count }}</div>
+        <div class="metric-label-modern">Total MOUs</div>
       </div>
     </div>
+
+    <!-- Card 2: Active & Approved -->
     <div class="col-6 col-md-4 col-xl-2">
-      <div class="app-card metric-card border-success-subtle">
-        <span class="metric-label text-success">Active & Approved</span>
-        <span class="metric-value text-success">{{ active_approved_count }}</span>
+      <div class="metric-card-modern">
+        <div class="metric-icon-box metric-icon-green">
+          <i class="bi bi-patch-check-fill"></i>
+        </div>
+        <div class="metric-value-modern text-success">{{ active_approved_count }}</div>
+        <div class="metric-label-modern">Active & Executed</div>
       </div>
     </div>
+
+    <!-- Card 3: Pending Partner -->
     <div class="col-6 col-md-4 col-xl-2">
-      <div class="app-card metric-card border-warning-subtle">
-        <span class="metric-label text-warning">Pending Partner</span>
-        <span class="metric-value text-warning">{{ pending_partner_count }}</span>
+      <div class="metric-card-modern">
+        <div class="metric-icon-box metric-icon-amber">
+          <i class="bi bi-send-check-fill"></i>
+        </div>
+        <div class="metric-value-modern text-warning">{{ pending_partner_count }}</div>
+        <div class="metric-label-modern">Pending Partner</div>
       </div>
     </div>
+
+    <!-- Card 4: Under Legal Review -->
     <div class="col-6 col-md-4 col-xl-2">
-      <div class="app-card metric-card border-primary-subtle">
-        <span class="metric-label text-primary">Under Legal Review</span>
-        <span class="metric-value text-primary">{{ pending_review_count }}</span>
+      <div class="metric-card-modern">
+        <div class="metric-icon-box metric-icon-indigo">
+          <i class="bi bi-file-earmark-medical-fill"></i>
+        </div>
+        <div class="metric-value-modern text-primary">{{ pending_review_count }}</div>
+        <div class="metric-label-modern">Under Review</div>
       </div>
     </div>
+
+    <!-- Card 5: Expiring Soon -->
     <div class="col-6 col-md-4 col-xl-2">
-      <div class="app-card metric-card {% if expiring_soon_count > 0 %}border-danger-subtle bg-danger-subtle bg-opacity-10{% endif %}">
-        <span class="metric-label {% if expiring_soon_count > 0 %}text-danger fw-bold{% endif %}">Expiring &le; 30d</span>
-        <span class="metric-value {% if expiring_soon_count > 0 %}text-danger{% endif %}">{{ expiring_soon_count }}</span>
+      <div class="metric-card-modern {% if expiring_soon_count > 0 %}border-danger border-opacity-50{% endif %}">
+        <div class="metric-icon-box metric-icon-rose">
+          <i class="bi bi-hourglass-bottom"></i>
+        </div>
+        <div class="metric-value-modern {% if expiring_soon_count > 0 %}text-danger{% endif %}">{{ expiring_soon_count }}</div>
+        <div class="metric-label-modern">Expiring &le; 30d</div>
       </div>
     </div>
+
+    <!-- Card 6: AI Risk Index -->
     <div class="col-6 col-md-4 col-xl-2">
-      <div class="app-card metric-card">
-        <span class="metric-label">Avg Risk Score</span>
-        <span class="metric-value">
+      <div class="metric-card-modern">
+        <div class="metric-icon-box metric-icon-purple">
+          <i class="bi bi-shield-lock-fill"></i>
+        </div>
+        <div class="metric-value-modern">
           {{ avg_risk }}<span class="fs-6 text-muted fw-normal">/10</span>
-        </span>
+        </div>
+        <div class="metric-label-modern">Avg Legal Risk</div>
       </div>
     </div>
   </div>
@@ -116,7 +148,7 @@
           <tr>
             <!-- Title & Department -->
             <td class="ps-4 py-3">
-              <a href="{% url 'mou_detail' mou.pk %}" class="fw-semibold text-decoration-none text-body d-block">
+              <a href="{% url 'mou_detail' mou.pk %}" class="fw-semibold text-decoration-none text-body d-block fs-6">
                 {{ mou.title }}
               </a>
               <span class="text-muted small">
