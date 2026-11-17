@@ -2,7 +2,8 @@ import json
 import logging
 from typing import Dict, Any, Optional
 from django.conf import settings
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ Note:
 
 
 class GeminiLegalAnalysisService:
-    """Zero-cost AI inference using Google Gemini Flash API."""
+    """Zero-cost AI inference using Google Gemini Flash API via the official google-genai SDK."""
 
     @classmethod
     def analyze_document(cls, text: str) -> Optional[Dict[str, Any]]:
@@ -75,25 +76,30 @@ class GeminiLegalAnalysisService:
             return None
 
         try:
-            genai.configure(api_key=api_key)
-            # Use gemini-1.5-flash or gemini-2.0-flash (both free tier on AI Studio)
-            model = genai.GenerativeModel(
-                model_name="gemini-1.5-flash",
-                generation_config={
-                    "response_mime_type": "application/json",
-                    "temperature": 0.2,
-                },
-                system_instruction=SYSTEM_PROMPT,
-            )
-
+            client = genai.Client(api_key=api_key)
             prompt = f"Analyze the following MOU agreement text:\n\n{text[:60000]}"
-            response = model.generate_content(prompt)
 
-            if not response or not response.text:
-                return None
+            # Attempt modern Gemini Flash model names
+            for model_name in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]:
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            system_instruction=SYSTEM_PROMPT,
+                            response_mime_type="application/json",
+                            temperature=0.2,
+                        ),
+                    )
 
-            data = json.loads(response.text)
-            return data
+                    if response and response.text:
+                        data = json.loads(response.text)
+                        return data
+                except Exception as model_err:
+                    logger.debug(f"Model {model_name} attempt: {model_err}")
+                    continue
+
+            return None
         except Exception as e:
-            logger.warning(f"Gemini API analysis failed or quota exceeded: {e}; falling back to rule engine.")
+            logger.warning(f"Gemini API analysis failed: {e}; falling back to offline rule engine.")
             return None
