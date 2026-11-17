@@ -1,0 +1,505 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ mou.title }} | Review Studio{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4">
+
+  <!-- Top Navigation & Action Banner -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-3 border-bottom gap-3">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <a href="{% url 'mou_dashboard' %}" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Back to Dashboard">
+          <i class="bi bi-arrow-left"></i>
+        </a>
+        <h1 class="h4 fw-bold mb-0">{{ mou.title }}</h1>
+        <span class="status-pill status-{{ mou.status }}">
+          <span class="status-dot"></span>
+          {{ mou.get_status_display }}
+        </span>
+      </div>
+      <div class="text-muted small">
+        <i class="bi bi-building me-1"></i> <strong>{{ mou.partner_organization }}</strong> &bull; Contact: {{ mou.partner_name }} ({{ mou.partner_email }})
+        &bull; Dept: {{ mou.department|default:'Institutional' }}
+      </div>
+    </div>
+
+    <!-- Main Workflow Actions -->
+    <div class="d-flex flex-wrap gap-2">
+      <!-- 1-Click Share Link Generator -->
+      <button type="button" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#shareLinkModal">
+        <i class="bi bi-link-45deg fs-6"></i>
+        <span>Generate Partner Link</span>
+      </button>
+
+      <!-- Re-analyze Button -->
+      <form action="{% url 'reanalyze_mou' mou.pk %}" method="post" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-secondary btn-sm" title="Re-run AI Analysis">
+          <i class="bi bi-arrow-clockwise"></i> Re-Scan AI
+        </button>
+      </form>
+
+      <!-- Request Partner Changes -->
+      {% if mou.status != MOUStatus.APPROVED %}
+      <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#requestChangesModal">
+        <i class="bi bi-exclamation-triangle me-1"></i> Request Changes
+      </button>
+
+      <!-- Approve & Digital Sign -->
+      <button type="button" class="btn btn-success btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#collegeSignModal">
+        <i class="bi bi-pen me-1"></i> Approve & Sign Digitally
+      </button>
+      {% endif %}
+
+      <!-- Printable Executive Summary -->
+      <a href="{% url 'executive_summary' mou.pk %}" class="btn btn-outline-dark btn-sm" target="_blank">
+        <i class="bi bi-printer me-1"></i> Executive Summary
+      </a>
+
+      <!-- Edit Metadata -->
+      <a href="{% url 'mou_edit' mou.pk %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-pencil"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Institutional Guardrail Safety Bar -->
+  {% if ai_analysis and ai_analysis.institutional_checks %}
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md">
+      <div class="guardrail-pill {% if ai_analysis.institutional_checks.ip_ownership_safe %}passed{% else %}alert{% endif %}">
+        <i class="bi {% if ai_analysis.institutional_checks.ip_ownership_safe %}bi-check-circle-fill text-success{% else %}bi-exclamation-octagon-fill text-danger{% endif %}"></i>
+        <span>IP Rights: <strong>{% if ai_analysis.institutional_checks.ip_ownership_safe %}Safe / Mutual{% else %}Action Required{% endif %}</strong></span>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="guardrail-pill {% if ai_analysis.institutional_checks.liability_capped %}passed{% else %}alert{% endif %}">
+        <i class="bi {% if ai_analysis.institutional_checks.liability_capped %}bi-check-circle-fill text-success{% else %}bi-exclamation-octagon-fill text-danger{% endif %}"></i>
+        <span>Liability: <strong>{% if ai_analysis.institutional_checks.liability_capped %}Capped{% else %}Uncapped Risk{% endif %}</strong></span>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="guardrail-pill {% if ai_analysis.institutional_checks.local_jurisdiction %}passed{% else %}alert{% endif %}">
+        <i class="bi {% if ai_analysis.institutional_checks.local_jurisdiction %}bi-check-circle-fill text-success{% else %}bi-exclamation-octagon-fill text-danger{% endif %}"></i>
+        <span>Jurisdiction: <strong>{% if ai_analysis.institutional_checks.local_jurisdiction %}Local / Standard{% else %}Distant Court{% endif %}</strong></span>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="guardrail-pill {% if ai_analysis.institutional_checks.student_data_safe %}passed{% else %}alert{% endif %}">
+        <i class="bi {% if ai_analysis.institutional_checks.student_data_safe %}bi-check-circle-fill text-success{% else %}bi-exclamation-octagon-fill text-danger{% endif %}"></i>
+        <span>Student Privacy: <strong>{% if ai_analysis.institutional_checks.student_data_safe %}Protected{% else %}PII Exposure{% endif %}</strong></span>
+      </div>
+    </div>
+    <div class="col-6 col-md">
+      <div class="guardrail-pill {% if ai_analysis.institutional_checks.financial_obligations_clear %}passed{% else %}alert{% endif %}">
+        <i class="bi {% if ai_analysis.institutional_checks.financial_obligations_clear %}bi-check-circle-fill text-success{% else %}bi-exclamation-octagon-fill text-danger{% endif %}"></i>
+        <span>Finances: <strong>{% if ai_analysis.institutional_checks.financial_obligations_clear %}No Hidden Fees{% else %}Verify Costs{% endif %}</strong></span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Split Screen Studio Container -->
+  <div class="studio-container">
+
+    <!-- LEFT COLUMN: PDF Preview & Document Artifacts -->
+    <div class="studio-left">
+      <div class="app-card p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-file-earmark-pdf text-danger me-1"></i> Original Agreement Document
+          </h6>
+          {% if mou.document %}
+            <a href="{{ mou.document.url }}" target="_blank" class="btn btn-sm btn-outline-secondary py-0">
+              <i class="bi bi-box-arrow-up-right me-1"></i> Open Fullscreen
+            </a>
+          {% endif %}
+        </div>
+
+        {% if mou.document %}
+          <iframe src="{{ mou.document.url }}" class="pdf-viewer-frame"></iframe>
+        {% else %}
+          <div class="p-5 text-center bg-light rounded border border-dashed text-muted">
+            <i class="bi bi-cloud-upload fs-1 d-block mb-2 text-primary"></i>
+            <h6 class="fw-semibold">No Document Uploaded Yet</h6>
+            <p class="small mb-3">You can upload a draft PDF or send an invite link to the partner to upload their proposed version.</p>
+            <a href="{% url 'mou_edit' mou.pk %}" class="btn btn-sm btn-primary">Upload MOU PDF</a>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Signatures & Submissions Summary Card -->
+      <div class="app-card p-3">
+        <h6 class="fw-bold mb-3 text-dark border-bottom pb-2">
+          <i class="bi bi-pen-fill text-primary me-1"></i> Digital Signatures & Execution Status
+        </h6>
+
+        <div class="row g-3">
+          <!-- Partner Signature -->
+          <div class="col-6">
+            <div class="p-3 rounded bg-light border text-center h-100">
+              <span class="text-muted small text-uppercase fw-semibold d-block mb-2">Partner Signatory</span>
+              {% if submissions.first and submissions.first.signature_image %}
+                <img src="{{ submissions.first.signature_image.url }}" alt="Partner Signature" class="img-fluid border bg-white rounded p-1 mb-2" style="max-height: 70px;">
+                <div class="fw-bold small">{{ submissions.first.partner_name }}</div>
+                <div class="text-muted" style="font-size: 0.7rem;">{{ submissions.first.submitted_at|date:"M d, Y H:i" }}</div>
+              {% else %}
+                <span class="badge bg-secondary-subtle text-secondary my-3">Awaiting Partner Signature</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- College Signature -->
+          <div class="col-6">
+            <div class="p-3 rounded bg-light border text-center h-100">
+              <span class="text-muted small text-uppercase fw-semibold d-block mb-2">College Signatory</span>
+              {% if mou.college_signature %}
+                <img src="{{ mou.college_signature.url }}" alt="College Signature" class="img-fluid border bg-white rounded p-1 mb-2" style="max-height: 70px;">
+                <div class="fw-bold small">{{ mou.college_signatory_name }}</div>
+                <div class="text-muted" style="font-size: 0.7rem;">{{ mou.college_signed_at|date:"M d, Y H:i" }}</div>
+              {% else %}
+                <span class="badge bg-secondary-subtle text-secondary my-3">Pending College Approval</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: AI Contract Intelligence & Flag Manager -->
+    <div class="studio-right">
+
+      <!-- AI Executive Overview Card -->
+      {% if ai_analysis %}
+      <div class="app-card p-3 mb-3 border-start border-4 border-{{ ai_analysis.badge_color }}">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <span class="text-uppercase text-muted fw-bold" style="font-size: 0.7rem;">AI Contract Intelligence Verdict</span>
+            <div class="d-flex align-items-center gap-2 mt-1">
+              <span class="risk-indicator risk-{{ ai_analysis.risk_level }} fs-6">
+                Score: {{ ai_analysis.overall_risk_score }}/10
+              </span>
+              <span class="badge bg-{{ ai_analysis.badge_color }} text-white">
+                {{ ai_analysis.get_compliance_status_display }}
+              </span>
+            </div>
+          </div>
+          <div class="text-end text-muted small">
+            <div><i class="bi bi-clock me-1"></i> {{ ai_analysis.processing_time_seconds }}s</div>
+            <div style="font-size: 0.7rem;">{{ ai_analysis.model_used }}</div>
+          </div>
+        </div>
+
+        <p class="small text-secondary mb-2 mt-2">
+          {{ ai_analysis.executive_summary }}
+        </p>
+
+        <div class="d-flex gap-3 text-muted small border-top pt-2">
+          <span><strong>{{ ai_analysis.total_clauses_analyzed }}</strong> Clauses Evaluated</span>
+          <span><span class="text-danger fw-bold">{{ ai_analysis.high_risk_count }}</span> High Risk</span>
+          <span><span class="text-warning-emphasis fw-bold">{{ ai_analysis.medium_risk_count }}</span> Medium</span>
+          <span><span class="text-success fw-bold">{{ ai_analysis.low_risk_count }}</span> Low</span>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Actionable Risk Flags Section -->
+      <div class="app-card p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+          <h6 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-flag-fill text-danger me-1"></i> Actionable Risk Flags ({{ unresolved_flags.count }})
+          </h6>
+          <span class="small text-muted">Legal & Institutional Redlines</span>
+        </div>
+
+        {% if unresolved_flags %}
+          <div class="d-flex flex-column gap-2 mb-2">
+            {% for flag in unresolved_flags %}
+            <div class="border rounded p-3 bg-white shadow-sm border-start border-3 border-danger">
+              <div class="d-flex justify-content-between align-items-start">
+                <span class="fw-bold text-dark small">{{ flag.title }}</span>
+                <span class="badge {{ flag.severity_badge }} text-uppercase" style="font-size: 0.65rem;">
+                  {{ flag.get_severity_display }}
+                </span>
+              </div>
+              <p class="small text-muted my-1">{{ flag.description }}</p>
+              {% if flag.suggested_action %}
+              <div class="p-2 rounded bg-light border-start border-warning border-3 small text-dark mt-2">
+                <strong><i class="bi bi-lightbulb text-warning me-1"></i> Action:</strong> {{ flag.suggested_action }}
+              </div>
+              {% endif %}
+
+              <div class="d-flex justify-content-end mt-2">
+                <button type="button" class="btn btn-sm btn-outline-success py-0 px-2" data-bs-toggle="modal" data-bs-target="#resolveFlagModal{{ flag.id }}">
+                  <i class="bi bi-check2"></i> Mark as Resolved
+                </button>
+              </div>
+            </div>
+
+            <!-- Resolve Flag Modal -->
+            <div class="modal fade" id="resolveFlagModal{{ flag.id }}" tabindex="-1" aria-hidden="true">
+              <div class="modal-dialog">
+                <form action="{% url 'resolve_risk_flag' flag.id %}" method="post" class="modal-content">
+                  {% csrf_token %}
+                  <div class="modal-header">
+                    <h5 class="modal-title h6">Resolve Flag: {{ flag.title }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <p class="small text-muted mb-2">{{ flag.description }}</p>
+                    <label class="form-label small fw-medium">Reviewer Resolution Notes:</label>
+                    <textarea name="resolution_notes" class="form-control" rows="3" placeholder="e.g. Discussed with partner; clause amended in revision..."></textarea>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-success">Confirm Resolution</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="alert alert-success d-flex align-items-center mb-2 py-2 small" role="alert">
+            <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+            <div>All identified risks are resolved or no critical flags found!</div>
+          </div>
+        {% endif %}
+
+        {% if resolved_flags %}
+        <div class="mt-2 text-end">
+          <button class="btn btn-link btn-sm text-muted text-decoration-none p-0" type="button" data-bs-toggle="collapse" data-bs-target="#resolvedFlagsList">
+            View {{ resolved_flags.count }} Resolved Items <i class="bi bi-chevron-down"></i>
+          </button>
+          <div class="collapse text-start mt-2" id="resolvedFlagsList">
+            {% for rflag in resolved_flags %}
+            <div class="p-2 border rounded bg-light small mb-1 text-muted">
+              <i class="bi bi-check-circle text-success me-1"></i> <strong>{{ rflag.title }}</strong>
+              <div style="font-size: 0.75rem;">Resolved by {{ rflag.resolved_by.username|default:'Staff' }} &bull; Notes: {{ rflag.resolution_notes|default:'None' }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Clause-by-Clause Review Studio -->
+      <div class="app-card p-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 border-bottom pb-2 gap-2">
+          <h6 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-journal-text text-primary me-1"></i> Structured Clause Breakdown
+          </h6>
+          <span class="small text-muted">{{ clauses|length }} Clauses Identified</span>
+        </div>
+
+        <!-- Category Filter Pills -->
+        <div class="d-flex flex-wrap gap-1 mb-3">
+          <button class="btn btn-sm btn-primary clause-filter-btn active" data-category="all">All</button>
+          <button class="btn btn-sm btn-outline-secondary clause-filter-btn" data-category="liability">Liability</button>
+          <button class="btn btn-sm btn-outline-secondary clause-filter-btn" data-category="ip">Intellectual Property</button>
+          <button class="btn btn-sm btn-outline-secondary clause-filter-btn" data-category="termination">Termination</button>
+          <button class="btn btn-sm btn-outline-secondary clause-filter-btn" data-category="dispute_resolution">Dispute</button>
+          <button class="btn btn-sm btn-outline-secondary clause-filter-btn" data-category="payment">Financial</button>
+        </div>
+
+        <!-- Clauses List -->
+        <div class="d-flex flex-column gap-3">
+          {% for clause in clauses %}
+          <div class="clause-card border rounded p-3 bg-white" data-category="{{ clause.category }}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-bold text-dark small">
+                {{ clause.clause_number|default:"Clause" }}
+                <span class="badge bg-light text-dark border ms-1 fw-normal">{{ clause.get_category_display }}</span>
+              </span>
+              <span class="badge {{ clause.risk_badge_class }}">
+                Risk: {{ clause.risk_score }}/10
+              </span>
+            </div>
+
+            <p class="small text-secondary mb-2 fst-italic bg-light p-2 rounded border">
+              "{{ clause.clause_text }}"
+            </p>
+
+            {% if clause.suggested_improvements %}
+            <div class="p-2 rounded bg-warning-subtle text-dark small mb-2 border border-warning-subtle">
+              <strong class="d-block text-warning-emphasis"><i class="bi bi-shield-check me-1"></i> Suggested Redline / Improvement:</strong>
+              {{ clause.suggested_improvements }}
+            </div>
+            {% endif %}
+
+            {% if clause.key_terms %}
+            <div class="d-flex flex-wrap gap-1">
+              {% for term in clause.key_terms %}
+                <span class="badge bg-secondary-subtle text-secondary" style="font-size: 0.65rem;">{{ term }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% empty %}
+          <div class="text-center py-4 text-muted small">
+            No clauses segmented yet. Click "Re-Scan AI" to analyze the document.
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Audit Trail History at Bottom -->
+  <div class="app-card p-3 mt-4">
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+      <h6 class="fw-bold mb-0 text-dark">
+        <i class="bi bi-clock-history text-muted me-1"></i> Institutional Audit Trail & Activity History
+      </h6>
+      <a href="{% url 'audit_log' mou.pk %}" class="btn btn-sm btn-link text-decoration-none">View Full History &rarr;</a>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-borderless text-muted small mb-0">
+        <tbody>
+          {% for log in activity_logs %}
+          <tr>
+            <td style="width: 170px;">{{ log.timestamp|date:"M d, Y H:i:s" }}</td>
+            <td style="width: 180px;"><span class="badge bg-light text-dark border">{{ log.get_action_display }}</span></td>
+            <td><strong>{{ log.actor_name|default:"System" }}</strong>: {{ log.description }}</td>
+            <td class="text-end">{{ log.ip_address|default:"" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal 1: Share Link Generator -->
+<div class="modal fade" id="shareLinkModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title h6">Generate Partner Collaboration Link</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted mb-3">
+          This secure, tokenized URL allows <strong>{{ mou.partner_organization }}</strong> to review the MOU, proofread terms, upload their revised PDF draft, and provide a digital signature.
+        </p>
+
+        {% if share_links %}
+          <label class="form-label small fw-medium">Active Partner Link:</label>
+          <div class="input-group mb-3">
+            <input type="text" id="activeShareUrl" class="form-control form-control-sm" value="{{ request.scheme }}://{{ request.get_host }}/partner/{{ share_links.first.token }}/" readonly>
+            <button class="btn btn-sm btn-outline-primary btn-copy-link" data-target="#activeShareUrl">
+              <i class="bi bi-clipboard"></i> Copy
+            </button>
+          </div>
+          <div class="small text-muted mb-3">
+            Expires on: {{ share_links.first.expires_at|date:"M d, Y" }} &bull; Access count: {{ share_links.first.access_count }}/{{ share_links.first.max_access_count }}
+          </div>
+        {% endif %}
+
+        <form action="{% url 'generate_share_link' mou.pk %}" method="post">
+          {% csrf_token %}
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label small fw-medium">Validity Period</label>
+              <select name="days" class="form-select form-select-sm">
+                <option value="7" selected>7 Days</option>
+                <option value="14">14 Days</option>
+                <option value="30">30 Days</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-medium">Max Access Limit</label>
+              <input type="number" name="max_clicks" class="form-control form-control-sm" value="15">
+            </div>
+          </div>
+          <div class="modal-footer px-0 pb-0 mt-3 border-top-0">
+            <button type="submit" class="btn btn-sm btn-primary">Generate Fresh Token Link</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 2: College Internal Approval & Canvas Signature Pad -->
+<div class="modal fade" id="collegeSignModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <form action="{% url 'college_approve_and_sign' mou.pk %}" method="post" class="modal-content">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title h6">
+          <i class="bi bi-shield-check text-success me-1"></i> Institutional Execution & Digital Countersign
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info py-2 small mb-3">
+          <i class="bi bi-info-circle me-1"></i>
+          Approving this agreement transitions its status to <strong>Approved & Executed</strong> and activates automated 30/60/90-day expiry monitoring.
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-6">
+            <label class="form-label small fw-medium">Authorized Signatory Name</label>
+            {{ college_sign_form.signatory_name }}
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label small fw-medium">Signatory Title</label>
+            {{ college_sign_form.signatory_title }}
+          </div>
+        </div>
+
+        <!-- Signature Pad -->
+        <label class="form-label small fw-medium d-flex justify-content-between align-items-center">
+          <span>Digital Signature (Draw with mouse or touch stylus) <span class="text-danger">*</span></span>
+          <button type="button" id="clearCollegeSigBtn" class="btn btn-link btn-sm text-danger p-0 text-decoration-none">
+            <i class="bi bi-eraser"></i> Clear
+          </button>
+        </label>
+        <div class="signature-canvas-wrapper mb-2">
+          <canvas id="collegeSignatureCanvas" class="signature-canvas" data-signature-pad data-target-input="id_college_signature_data" data-clear-btn="clearCollegeSigBtn"></canvas>
+        </div>
+        {{ college_sign_form.signature_data }}
+        <div class="form-text small text-muted">
+          Your digital signature will be timestamped and cryptographically linked to the MOU audit record.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-sm btn-success px-3">
+          <i class="bi bi-check2-circle me-1"></i> Approve & Officially Execute MOU
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal 3: Request Changes -->
+<div class="modal fade" id="requestChangesModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form action="{% url 'request_partner_changes' mou.pk %}" method="post" class="modal-content">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title h6">Request Changes / Amendments</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted mb-2">
+          Specify what amendments or redlines are required before institutional approval.
+        </p>
+        <label class="form-label small fw-medium">Requested Redlines / Notes:</label>
+        <textarea name="notes" class="form-control" rows="4" placeholder="e.g. Please cap liability under Section 5 to direct damages and specify that research IP is mutually held..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-sm btn-warning">Submit Change Request</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

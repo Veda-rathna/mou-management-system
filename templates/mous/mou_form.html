@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container py-3" style="max-width: 900px;">
+
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{% url 'mou_dashboard' %}">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+    </ol>
+  </nav>
+
+  <div class="app-card p-4 p-md-5">
+    <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
+      <div class="rounded-circle bg-primary-subtle p-3 text-primary">
+        <i class="bi bi-file-earmark-text fs-3"></i>
+      </div>
+      <div>
+        <h2 class="h4 fw-bold mb-1">{{ title }}</h2>
+        <p class="text-muted small mb-0">Record agreement metadata and upload original MOU PDF for instant AI extraction.</p>
+      </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+
+      <!-- Section 1: Agreement Info -->
+      <h5 class="fw-semibold text-dark mb-3">1. Agreement Information</h5>
+      <div class="row g-3 mb-4">
+        <div class="col-12">
+          <label class="form-label fw-medium small">MOU Title <span class="text-danger">*</span></label>
+          {{ form.title }}
+          {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-medium small">Department / Faculty</label>
+          {{ form.department }}
+          {% if form.department.errors %}<div class="text-danger small mt-1">{{ form.department.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-medium small">PDF Agreement Document</label>
+          {{ form.document }}
+          <div class="form-text small">Accepted format: <code>.pdf</code> (Max 10 MB). Leave blank if inviting partner to propose draft.</div>
+          {% if form.document.errors %}<div class="text-danger small mt-1">{{ form.document.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="col-12">
+          <label class="form-label fw-medium small">Scope & Objectives</label>
+          {{ form.description }}
+          {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <!-- Section 2: External Partner Contact -->
+      <h5 class="fw-semibold text-dark mb-3">2. External Partner Organization</h5>
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-medium small">Partner Organization / Company <span class="text-danger">*</span></label>
+          {{ form.partner_organization }}
+          {% if form.partner_organization.errors %}<div class="text-danger small mt-1">{{ form.partner_organization.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-medium small">Primary Contact / Signatory Name <span class="text-danger">*</span></label>
+          {{ form.partner_name }}
+          {% if form.partner_name.errors %}<div class="text-danger small mt-1">{{ form.partner_name.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-medium small">Official Partner Email <span class="text-danger">*</span></label>
+          {{ form.partner_email }}
+          {% if form.partner_email.errors %}<div class="text-danger small mt-1">{{ form.partner_email.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-medium small">Contact Phone (Optional)</label>
+          {{ form.partner_phone }}
+          {% if form.partner_phone.errors %}<div class="text-danger small mt-1">{{ form.partner_phone.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <!-- Section 3: Validity Dates -->
+      <h5 class="fw-semibold text-dark mb-3">3. Validity Period</h5>
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-medium small">Effective / Start Date</label>
+          {{ form.start_date }}
+          {% if form.start_date.errors %}<div class="text-danger small mt-1">{{ form.start_date.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label fw-medium small">Expiry Date</label>
+          {{ form.expiry_date }}
+          {% if form.expiry_date.errors %}<div class="text-danger small mt-1">{{ form.expiry_date.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+        <a href="{% url 'mou_dashboard' %}" class="btn btn-outline-secondary">
+          Cancel
+        </a>
+        <button type="submit" class="btn btn-primary px-4 shadow-sm">
+          <i class="bi bi-check2-circle me-1"></i> Save & Run AI Intelligence
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+</div>
+{% endblock %}

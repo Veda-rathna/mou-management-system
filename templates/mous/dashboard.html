@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}Executive Portfolio Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-4">
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+      <h1 class="h3 fw-bold mb-1">MOU Management Portfolio</h1>
+      <p class="text-muted small mb-0">Centralized Institutional Agreement Lifecycle & AI Contract Intelligence</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'mou_create' %}" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm">
+        <i class="bi bi-file-earmark-plus"></i>
+        <span>Initiate New MOU</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Executive Metrics Row -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="app-card metric-card">
+        <span class="metric-label">Total MOUs</span>
+        <span class="metric-value">{{ total_count }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="app-card metric-card border-success-subtle">
+        <span class="metric-label text-success">Active & Approved</span>
+        <span class="metric-value text-success">{{ active_approved_count }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="app-card metric-card border-warning-subtle">
+        <span class="metric-label text-warning">Pending Partner</span>
+        <span class="metric-value text-warning">{{ pending_partner_count }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="app-card metric-card border-primary-subtle">
+        <span class="metric-label text-primary">Under Legal Review</span>
+        <span class="metric-value text-primary">{{ pending_review_count }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="app-card metric-card {% if expiring_soon_count > 0 %}border-danger-subtle bg-danger-subtle bg-opacity-10{% endif %}">
+        <span class="metric-label {% if expiring_soon_count > 0 %}text-danger fw-bold{% endif %}">Expiring &le; 30d</span>
+        <span class="metric-value {% if expiring_soon_count > 0 %}text-danger{% endif %}">{{ expiring_soon_count }}</span>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+      <div class="app-card metric-card">
+        <span class="metric-label">Avg Risk Score</span>
+        <span class="metric-value">
+          {{ avg_risk }}<span class="fs-6 text-muted fw-normal">/10</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search, Filter & Controls Bar -->
+  <div class="app-card p-3 mb-4">
+    <form method="get" class="row g-2 align-items-center">
+      <div class="col-12 col-md-5">
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+          <input type="text" name="q" value="{{ q }}" class="form-control border-start-0 ps-0" placeholder="Search by MOU title, partner, organization, or dept...">
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <select name="status" class="form-select" onchange="this.form.submit()">
+          <option value="">All Lifecycle Statuses</option>
+          <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft (Initiated)</option>
+          <option value="pending_partner" {% if status_filter == 'pending_partner' %}selected{% endif %}>Pending Partner Action</option>
+          <option value="pending_review" {% if status_filter == 'pending_review' %}selected{% endif %}>Under Legal Review</option>
+          <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved & Executed</option>
+          <option value="changes_requested" {% if status_filter == 'changes_requested' %}selected{% endif %}>Changes Requested</option>
+          <option value="expired" {% if status_filter == 'expired' %}selected{% endif %}>Expired</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-3">
+        <select name="sort" class="form-select" onchange="this.form.submit()">
+          <option value="-created_at" {% if sort == '-created_at' %}selected{% endif %}>Newest Created First</option>
+          <option value="created_at" {% if sort == 'created_at' %}selected{% endif %}>Oldest First</option>
+          <option value="expiry_date" {% if sort == 'expiry_date' %}selected{% endif %}>Expiry Date (Soonest First)</option>
+          <option value="-expiry_date" {% if sort == '-expiry_date' %}selected{% endif %}>Expiry Date (Furthest First)</option>
+          <option value="title" {% if sort == 'title' %}selected{% endif %}>Title (A-Z)</option>
+          <option value="partner_organization" {% if sort == 'partner_organization' %}selected{% endif %}>Partner Organization (A-Z)</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-1 d-grid">
+        <button type="submit" class="btn btn-outline-secondary">Filter</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- MOU Repository Table -->
+  <div class="app-card overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light text-muted small text-uppercase">
+          <tr>
+            <th scope="col" class="ps-4 py-3">Agreement Title & Dept</th>
+            <th scope="col">Partner Organization</th>
+            <th scope="col">Status</th>
+            <th scope="col">AI Risk Index</th>
+            <th scope="col">Validity / Expiry</th>
+            <th scope="col" class="text-end pe-4">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="border-top-0">
+          {% for mou in mous %}
+          <tr>
+            <!-- Title & Department -->
+            <td class="ps-4 py-3">
+              <a href="{% url 'mou_detail' mou.pk %}" class="fw-semibold text-decoration-none text-dark d-block">
+                {{ mou.title }}
+              </a>
+              <span class="text-muted small">
+                <i class="bi bi-building me-1"></i> {{ mou.department|default:'Institutional' }}
+                {% if mou.document %}
+                  &bull; <i class="bi bi-file-earmark-pdf text-danger"></i> PDF ({{ mou.page_count }} pp)
+                {% endif %}
+              </span>
+            </td>
+
+            <!-- Partner Info -->
+            <td>
+              <div class="fw-medium text-dark">{{ mou.partner_organization }}</div>
+              <div class="text-muted small">
+                <i class="bi bi-person me-1"></i> {{ mou.partner_name }}
+              </div>
+            </td>
+
+            <!-- Lifecycle Status -->
+            <td>
+              <span class="status-pill status-{{ mou.status }}">
+                <span class="status-dot"></span>
+                {{ mou.get_status_display }}
+              </span>
+            </td>
+
+            <!-- AI Risk Score -->
+            <td>
+              {% if mou.ai_analysis %}
+                <span class="risk-indicator risk-{{ mou.ai_analysis.risk_level }}">
+                  <i class="bi bi-shield-exclamation me-1"></i>
+                  {{ mou.ai_analysis.overall_risk_score }}/10 ({{ mou.ai_analysis.get_risk_level_display }})
+                </span>
+              {% else %}
+                <span class="badge bg-light text-muted border">Pending Scan</span>
+              {% endif %}
+            </td>
+
+            <!-- Expiry Radar -->
+            <td>
+              {% if mou.expiry_date %}
+                {% if mou.expiry_urgency == 'urgent' %}
+                  <span class="badge bg-danger-subtle text-danger border border-danger">
+                    <i class="bi bi-alarm me-1"></i> {{ mou.expiry_date|date:"M d, Y" }} ({{ mou.days_until_expiry }}d left)
+                  </span>
+                {% elif mou.expiry_urgency == 'warning' %}
+                  <span class="badge bg-warning-subtle text-warning-emphasis border border-warning">
+                    <i class="bi bi-clock-history me-1"></i> {{ mou.expiry_date|date:"M d, Y" }} ({{ mou.days_until_expiry }}d left)
+                  </span>
+                {% elif mou.expiry_urgency == 'expired' %}
+                  <span class="badge bg-secondary-subtle text-secondary border">
+                    Expired on {{ mou.expiry_date|date:"M d, Y" }}
+                  </span>
+                {% else %}
+                  <span class="text-dark small">
+                    {{ mou.expiry_date|date:"M d, Y" }}
+                  </span>
+                {% endif %}
+              {% else %}
+                <span class="text-muted small">Not set</span>
+              {% endif %}
+            </td>
+
+            <!-- Actions -->
+            <td class="text-end pe-4">
+              <div class="btn-group btn-group-sm">
+                <a href="{% url 'mou_detail' mou.pk %}" class="btn btn-outline-primary" title="Open Review Studio">
+                  <i class="bi bi-layout-split me-1"></i> Review
+                </a>
+                <a href="{% url 'executive_summary' mou.pk %}" class="btn btn-outline-secondary" title="Executive Summary (Printable)">
+                  <i class="bi bi-printer"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-5 text-muted">
+              <i class="bi bi-folder2-open fs-1 d-block mb-2 text-secondary"></i>
+              No MOU records found matching your filters.
+              <div class="mt-2">
+                <a href="{% url 'mou_create' %}" class="btn btn-sm btn-primary">Create Your First MOU</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if mous.has_other_pages %}
+    <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light-subtle">
+      <small class="text-muted">
+        Showing {{ mous.start_index }} to {{ mous.end_index }} of {{ total_count }} records
+      </small>
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          {% if mous.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ mous.previous_page_number }}&q={{ q }}&status={{ status_filter }}&sort={{ sort }}">Previous</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+          {% endif %}
+
+          {% for num in mous.paginator.page_range %}
+            {% if mous.number == num %}
+              <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > mous.number|add:'-3' and num < mous.number|add:'3' %}
+              <li class="page-item"><a class="page-link" href="?page={{ num }}&q={{ q }}&status={{ status_filter }}&sort={{ sort }}">{{ num }}</a></li>
+            {% endif %}
+          {% endfor %}
+
+          {% if mous.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ mous.next_page_number }}&q={{ q }}&status={{ status_filter }}&sort={{ sort }}">Next</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
